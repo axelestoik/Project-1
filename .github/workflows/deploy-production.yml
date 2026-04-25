@@ -1,0 +1,40 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to deploy (e.g., v1.2.0)'
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy to Production Environment
+    runs-on: ubuntu-latest
+    
+    environment:
+      name: production
+      url: https://your-production-app.com 
+
+    steps:
+      - name: Checkout specific release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.release_tag }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Build application (simulation)
+        run: echo "No build step required for this static project."
+
+      - name: Deploy to Production Service (simulation)
+        run: |
+          echo "🚀 Deploying tag ${{ github.event.inputs.release_tag }} to production..."
+          echo "✅ Deployment successful!"

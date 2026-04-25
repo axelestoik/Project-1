@@ -1,0 +1,25 @@
+
+{
+  "sidebar": {
+    "dashboard": "Panel",
+    "properties": "Propiedades",
+    "leases": "Contratos",
+    "accounting": "Contabilidad",
+    "maintenance": "Mantenimiento",
+    "billing": "Facturación",
+    "status": "Estado del Sistema",
+    "settings": "Ajustes"
+  },
+  "settings": {
+    "title": "Configuración del Sistema",
+    "description": "Gestionar roles de usuario y preferencias de idioma.",
+    "language": "Idioma",
+    "role": "Rol Actual",
+    "admin_panel_title": "Administración del Sistema",
+    "admin_panel_desc": "Este panel solo es visible para usuarios con el rol de 'Admin'.",
+    "admin_panel_button": "Reiniciar Sistema"
+  },
+  "protected": {
+    "unauthorized": "No tienes permiso para ver este contenido."
+  }
+}

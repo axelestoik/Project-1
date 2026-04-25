@@ -1,0 +1,25 @@
+
+{
+  "sidebar": {
+    "dashboard": "Dashboard",
+    "properties": "Properties",
+    "leases": "Leases",
+    "accounting": "Accounting",
+    "maintenance": "Maintenance",
+    "billing": "Billing",
+    "status": "System Status",
+    "settings": "Settings"
+  },
+  "settings": {
+    "title": "System Configuration",
+    "description": "Manage user roles and language preferences.",
+    "language": "Language",
+    "role": "Current Role",
+    "admin_panel_title": "System Administration",
+    "admin_panel_desc": "This panel is only visible to users with the 'Admin' role.",
+    "admin_panel_button": "Reset System"
+  },
+  "protected": {
+    "unauthorized": "You do not have permission to view this content."
+  }
+}
