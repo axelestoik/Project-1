@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Property } from '@/shared/types';
+import { useTranslation } from '@/core/i18n/I18nContext';
 
 interface PropertiesProps {
   properties: Property[];
@@ -8,15 +9,26 @@ interface PropertiesProps {
 }
 
 const Properties: React.FC<PropertiesProps> = ({ properties, setProperties: _setProperties }) => {
+  const { t } = useTranslation();
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'Occupied': return t('properties.occupied');
+      case 'Vacant': return t('properties.vacant');
+      case 'Maintenance': return t('properties.maintenance');
+      default: return status;
+    }
+  };
+
   return (
     <div className="space-y-8 animate-fadeIn bg-white">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h2 className="text-4xl font-black text-slate-500 tracking-tight">Asset Portfolio</h2>
-          <p className="text-slate-400 font-medium">Global management of real estate inventory.</p>
+          <h2 className="text-4xl font-black text-slate-500 tracking-tight">{t('properties.title')}</h2>
+          <p className="text-slate-400 font-medium">{t('properties.subtitle')}</p>
         </div>
         <button className="px-8 py-4 bg-[#87a3a3] text-white rounded-[24px] font-black text-xs uppercase tracking-widest shadow-xl shadow-[#87a3a340] hover:bg-[#6b8686] transition-all">
-          + Onboard Asset
+          {t('properties.onboard_btn')}
         </button>
       </div>
 
@@ -35,7 +47,7 @@ const Properties: React.FC<PropertiesProps> = ({ properties, setProperties: _set
                   p.status === 'Occupied' ? 'bg-emerald-500/90 text-white' : 
                   p.status === 'Maintenance' ? 'bg-amber-500/90 text-white' : 'bg-[#87a3a3]/90 text-white'
                 }`}>
-                  {p.status}
+                  {getStatusLabel(p.status)}
                 </span>
               </div>
               <div className="absolute bottom-6 left-6">
@@ -55,7 +67,7 @@ const Properties: React.FC<PropertiesProps> = ({ properties, setProperties: _set
               </p>
               <div className="flex justify-between items-center pt-8 border-t border-slate-50">
                 <button className="text-[#87a3a3] font-black text-xs uppercase tracking-widest hover:translate-x-1 transition-transform flex items-center gap-2">
-                  Full Dossier
+                  {t('properties.full_dossier')}
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
                   </svg>

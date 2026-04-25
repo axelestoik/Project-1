@@ -20,6 +20,7 @@ import { USER_ROLES } from '@/core/auth/roles';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.Dashboard);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [apiKeyMissing, setApiKeyMissing] = useState(false);
   const { user, logout, activeOrganization, activeRole, organizations, switchOrganization, activeBranchId, switchBranch } = useAuth();
   const { t } = useTranslation();
@@ -112,20 +113,37 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-white">
-      <aside className="w-72 bg-white text-slate-500 flex-shrink-0 flex flex-col hidden md:flex border-r border-slate-100">
+    <div className="flex min-h-screen bg-white relative">
+      {/* Mobile Menu Backdrop */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 z-40 md:hidden backdrop-blur-sm"
+          onClick={() => setIsMobileMenuOpen(false)}
+          onKeyDown={(e) => e.key === 'Escape' && setIsMobileMenuOpen(false)}
+          role="button"
+          tabIndex={0}
+          aria-label="Close menu"
+        />
+      )}
+
+      <aside className={`
+        w-72 bg-white text-slate-500 flex-shrink-0 flex flex-col border-r border-slate-100 z-50
+        transition-transform duration-300 ease-in-out
+        fixed md:sticky top-0 h-screen
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
         <div className="p-8 flex items-center gap-4">
           <Logo size="sm" />
           <div>
             <h1 className="text-xl font-black tracking-tight leading-tight text-slate-800">LOT 202</h1>
-            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Management</p>
+            <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">{t('sidebar.dashboard') === 'Dashboard' ? 'Management' : 'Gestión'}</p>
           </div>
         </div>
 
         {organizations.length > 0 && (
           <div className="px-8 space-y-4 mb-6">
             <div>
-              <label htmlFor="org-switcher" className="block text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-2">Active Organization</label>
+              <label htmlFor="org-switcher" className="block text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-2">{t('app.active_org')}</label>
               <select 
                 id="org-switcher"
                 value={activeOrganization?.id || ''} 
@@ -141,8 +159,8 @@ const App: React.FC = () => {
             {branches.length > 0 && (
               <div>
                 <label htmlFor="branch-switcher" className="block text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-2 flex items-center justify-between">
-                  Active Branch
-                  <span className="text-[8px] bg-[#87a3a320] text-[#87a3a3] px-1.5 rounded uppercase">Scoped</span>
+                  {t('app.active_branch')}
+                  <span className="text-[8px] bg-[#87a3a320] text-[#87a3a3] px-1.5 rounded uppercase">{t('app.scoped')}</span>
                 </label>
                 <select 
                   id="branch-switcher"
@@ -150,7 +168,7 @@ const App: React.FC = () => {
                   onChange={(e) => switchBranch(e.target.value || null)}
                   className="w-full bg-slate-50 border border-slate-100 text-slate-700 text-sm font-bold rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#87a3a350]"
                 >
-                  <option value="">All Branches</option>
+                  <option value="">{t('app.all_branches')}</option>
                   {branches.map(br => (
                     <option key={br.id} value={br.id}>{br.name}</option>
                   ))}
@@ -158,15 +176,15 @@ const App: React.FC = () => {
                 {activeBranchId && (
                   <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-100 text-[10px] space-y-1">
                     <div className="flex justify-between">
-                      <span className="text-slate-400 font-bold uppercase tracking-tighter">Rent Control</span>
+                      <span className="text-slate-400 font-bold uppercase tracking-tighter">{t('app.rent_control')}</span>
                       <span className={jurisdictionConfig.isRentControlEnabled ? 'text-green-500 font-black' : 'text-slate-300 font-black'}>
-                        {jurisdictionConfig.isRentControlEnabled ? 'ENABLED' : 'DISABLED'}
+                        {jurisdictionConfig.isRentControlEnabled ? t('app.enabled') : t('app.disabled')}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400 font-bold uppercase tracking-tighter">Inspection</span>
+                      <span className="text-slate-400 font-bold uppercase tracking-tighter">{t('app.inspection')}</span>
                       <span className={jurisdictionConfig.mandatoryInspection ? 'text-[#87a3a3] font-black' : 'text-slate-300 font-black'}>
-                        {jurisdictionConfig.mandatoryInspection ? 'MANDATORY' : 'OPTIONAL'}
+                        {jurisdictionConfig.mandatoryInspection ? t('app.mandatory') : t('app.optional')}
                       </span>
                     </div>
                   </div>
@@ -181,7 +199,10 @@ const App: React.FC = () => {
              const content = (
               <button
                 key={item.id}
-                onClick={() => setCurrentView(item.id)}
+                onClick={() => {
+                  setCurrentView(item.id);
+                  setIsMobileMenuOpen(false);
+                }}
                 className={`w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl transition-all duration-200 ${
                   currentView === item.id 
                     ? 'bg-slate-50 text-[#87a3a3] shadow-sm' 
@@ -204,13 +225,13 @@ const App: React.FC = () => {
                <div className="w-10 h-10 rounded-full bg-[#87a3a3] text-white flex-shrink-0 flex items-center justify-center font-black shadow-sm">{user?.firstName?.charAt(0) || '?'}</div>
                <div className="overflow-hidden">
                  <p className="text-sm font-bold text-slate-800 truncate">{user?.firstName} {user?.lastName}</p>
-                 <p className="text-[10px] text-slate-400 font-bold tracking-tight">{activeRole || 'No Role'}</p>
+                 <p className="text-[10px] text-slate-400 font-bold tracking-tight">{activeRole || t('app.no_role')}</p>
                </div>
             </div>
             <button 
               onClick={logout}
               className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-              title="Logout"
+              title={t('app.logout')}
             >
               <Icons.Logout />
             </button>
@@ -221,7 +242,7 @@ const App: React.FC = () => {
       <main className="flex-1 flex flex-col overflow-y-auto relative bg-white">
         {apiKeyMissing && (
           <div className="bg-red-100 border-b-2 border-red-500 text-red-700 text-center p-3 font-semibold text-sm sticky top-0 z-30">
-            Warning: Your Gemini API Key is missing or invalid. AI features will not work.
+            {t('app.api_key_warning')}
           </div>
         )}
         <header className="md:hidden p-4 bg-[#87a3a3] text-white flex justify-between items-center sticky top-0 z-20 shadow-lg">
@@ -236,10 +257,19 @@ const App: React.FC = () => {
             >
               <Icons.Logout />
             </button>
-            <button className="p-2 bg-[#ffffff20] rounded-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
-              </svg>
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 bg-[#ffffff20] rounded-lg text-white"
+            >
+              {isMobileMenuOpen ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+              )}
             </button>
           </div>
         </header>

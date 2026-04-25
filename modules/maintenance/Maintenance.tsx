@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { MaintenanceTask, Property, MaintenanceStatus } from '@/shared/types';
 import { getMaintenanceAdvice } from '@/core/services/geminiService';
 import { Logo } from '@/shared/ui/constants';
+import { useTranslation } from '@/core/i18n/I18nContext';
 
 interface MaintenanceProps {
   tasks: MaintenanceTask[];
@@ -43,10 +44,20 @@ const getStatusColor = (status: MaintenanceStatus) => {
 };
 
 const Maintenance: React.FC<MaintenanceProps> = ({ tasks, setTasks, properties }) => {
+  const { t } = useTranslation();
   const [selectedTask, setSelectedTask] = useState<MaintenanceTask | null>(null);
   const [advice, setAdvice] = useState<string>('');
   const [isLoadingAdvice, setIsLoadingAdvice] = useState(false);
   const [filterStatus, setFilterStatus] = useState<MaintenanceStatus | 'All'>('All');
+
+  const getStatusLabel = (status: string) => {
+    if (status === 'All') return t('maintenance.status.All') || 'All';
+    return t(`maintenance.status.${status}`) || status;
+  };
+
+  const getPriorityLabel = (priority: string) => {
+    return t(`maintenance.priority.${priority}`) || priority;
+  };
 
   const counts = useMemo(() => {
     const acc: Record<string, number> = { All: tasks.length };
@@ -66,7 +77,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ tasks, setTasks, properties }
     setIsLoadingAdvice(true);
     const correlationId = crypto.randomUUID();
     const result = await getMaintenanceAdvice(task.title, task.description, correlationId);
-    setAdvice(result || "Could not get advice.");
+    setAdvice(result || t('maintenance.could_not_get_advice'));
     setIsLoadingAdvice(false);
   };
 
@@ -88,11 +99,11 @@ const Maintenance: React.FC<MaintenanceProps> = ({ tasks, setTasks, properties }
     <div className="space-y-8 animate-fadeIn bg-white">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h2 className="text-4xl font-black text-slate-500 tracking-tight">Maintenance Pipeline</h2>
-          <p className="text-slate-400 font-medium">Coordinate logistics and upkeep across all assets.</p>
+          <h2 className="text-4xl font-black text-slate-500 tracking-tight">{t('maintenance.title')}</h2>
+          <p className="text-slate-400 font-medium">{t('maintenance.subtitle')}</p>
         </div>
         <button className="px-8 py-4 bg-[#87a3a3] text-white rounded-[24px] font-black text-xs uppercase tracking-widest shadow-xl shadow-[#87a3a340] hover:bg-[#6b8686] hover:translate-y-[-2px] transition-all flex-shrink-0">
-          + Create Job
+          {t('maintenance.create_btn')}
         </button>
       </div>
 
@@ -108,7 +119,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ tasks, setTasks, properties }
                 : 'bg-white border-slate-100 text-slate-300 hover:border-[#87a3a320] hover:text-slate-500'
             }`}
           >
-            {opt}
+            {getStatusLabel(opt)}
             <span className={`px-2 py-0.5 rounded-lg text-[9px] ${
               filterStatus === opt ? 'bg-white/20 text-white' : 'bg-slate-50 text-slate-300'
             }`}>
@@ -143,10 +154,10 @@ const Maintenance: React.FC<MaintenanceProps> = ({ tasks, setTasks, properties }
                       task.priority === 'High' ? 'bg-rose-400 text-white' : 
                       task.priority === 'Medium' ? 'bg-amber-400 text-white' : 'bg-slate-300 text-white'
                     }`}>
-                      {task.priority}
+                      {getPriorityLabel(task.priority)}
                     </span>
                     <span className={`px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusColor(task.status)}`}>
-                      {task.status}
+                      {getStatusLabel(task.status)}
                     </span>
                   </div>
                 </div>
@@ -157,10 +168,10 @@ const Maintenance: React.FC<MaintenanceProps> = ({ tasks, setTasks, properties }
                   <div className="mb-6 p-4 bg-white rounded-2xl border border-slate-100 flex items-center justify-between">
                     <div>
                       <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">
-                        {task.status === 'Assessing' ? 'Site Visit' : 'Technician Arrival'}
+                        {task.status === 'Assessing' ? t('maintenance.site_visit') : t('maintenance.tech_arrival')}
                       </p>
                       <p className="text-sm font-black text-[#87a3a3]">
-                        {task.status === 'Assessing' ? (task.assessmentDate || 'Pending Schedule') : (task.scheduledDate || 'Pending Schedule')}
+                        {task.status === 'Assessing' ? (task.assessmentDate || t('maintenance.pending_schedule')) : (task.scheduledDate || t('maintenance.pending_schedule'))}
                       </p>
                     </div>
                     <div className="p-2 bg-white rounded-xl text-[#87a3a3] shadow-sm">
@@ -176,11 +187,11 @@ const Maintenance: React.FC<MaintenanceProps> = ({ tasks, setTasks, properties }
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Deadline: {task.dueDate}
+                    {t('maintenance.deadline')}: {task.dueDate}
                   </div>
                   
                   <div className="flex items-center gap-3">
-                    <label htmlFor={`status-${task.id}`} className="text-[9px] font-black text-slate-200 uppercase tracking-widest">Workflow Step</label>
+                    <label htmlFor={`status-${task.id}`} className="text-[9px] font-black text-slate-200 uppercase tracking-widest">{t('maintenance.workflow_step')}</label>
                     <select 
                       id={`status-${task.id}`}
                       value={task.status}
@@ -189,7 +200,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ tasks, setTasks, properties }
                       className="text-[10px] bg-white border border-slate-200 rounded-xl px-4 py-2 font-black text-slate-500 focus:ring-4 focus:ring-[#87a3a320] outline-none appearance-none cursor-pointer hover:bg-slate-50 transition-all uppercase tracking-widest"
                     >
                       {STATUS_OPTIONS.filter(o => o !== 'All').map(opt => (
-                        <option key={opt} value={opt}>{opt}</option>
+                        <option key={opt} value={opt}>{getStatusLabel(opt)}</option>
                       ))}
                     </select>
                   </div>
@@ -203,8 +214,8 @@ const Maintenance: React.FC<MaintenanceProps> = ({ tasks, setTasks, properties }
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                 </svg>
               </div>
-              <h4 className="text-xl font-black text-slate-400 mb-2">No active jobs</h4>
-              <p className="text-slate-300 font-medium max-w-xs mx-auto">The board is clear for &quot;{filterStatus}&quot;.</p>
+              <h4 className="text-xl font-black text-slate-400 mb-2">{t('maintenance.no_active_jobs')}</h4>
+              <p className="text-slate-300 font-medium max-w-xs mx-auto">{t('maintenance.board_clear').replace('{filter}', getStatusLabel(filterStatus))}</p>
             </div>
           )}
         </div>
@@ -221,13 +232,13 @@ const Maintenance: React.FC<MaintenanceProps> = ({ tasks, setTasks, properties }
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black tracking-tight leading-tight">AI Dispatcher</h3>
-                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Operational Guidance</p>
+                    <h3 className="text-2xl font-black tracking-tight leading-tight">{t('maintenance.ai_dispatcher')}</h3>
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">{t('maintenance.operational_guidance')}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-[10px] font-black px-3 py-1 bg-white/10 rounded-lg text-white/70 uppercase">Ref: {selectedTask.id}</span>
-                  <span className="text-[10px] font-black px-3 py-1 bg-[#87a3a3]/20 rounded-lg text-[#87a3a3] uppercase">Status: {selectedTask.status}</span>
+                  <span className="text-[10px] font-black px-3 py-1 bg-[#87a3a3]/20 rounded-lg text-[#87a3a3] uppercase">Status: {getStatusLabel(selectedTask.status)}</span>
                 </div>
               </header>
               
@@ -238,7 +249,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ tasks, setTasks, properties }
                       <div className="animate-ping absolute inset-0 rounded-full bg-[#87a3a3] opacity-20"></div>
                       <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#87a3a3]"></div>
                     </div>
-                    <p className="text-[#87a3a3] font-black text-xs uppercase tracking-widest animate-pulse">Running Diagnostic Protocols...</p>
+                    <p className="text-[#87a3a3] font-black text-xs uppercase tracking-widest animate-pulse">{t('maintenance.running_diagnostic')}</p>
                   </div>
                 ) : (
                   <div className="space-y-8 animate-fadeIn">
@@ -246,7 +257,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ tasks, setTasks, properties }
                     {(selectedTask.status === 'Assessing' || selectedTask.status === 'Scheduled') && (
                       <div className="bg-white/5 p-7 rounded-[32px] border border-white/10 backdrop-blur-sm">
                         <h4 className="text-[10px] font-black text-[#87a3a3] uppercase mb-5 tracking-[0.3em]">
-                          Scheduling Engine
+                          {t('maintenance.scheduling_engine')}
                         </h4>
                         <div className="relative">
                           <input 
@@ -256,7 +267,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ tasks, setTasks, properties }
                             onChange={(e) => updateDateField(selectedTask.id, selectedTask.status === 'Assessing' ? 'assessmentDate' : 'scheduledDate', e.target.value)}
                           />
                         </div>
-                        <p className="text-[10px] text-white/30 mt-4 font-medium">Auto-sync with technician calendar is enabled.</p>
+                        <p className="text-[10px] text-white/30 mt-4 font-medium">{t('maintenance.auto_sync')}</p>
                       </div>
                     )}
 
@@ -266,7 +277,7 @@ const Maintenance: React.FC<MaintenanceProps> = ({ tasks, setTasks, properties }
                           <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                         </svg>
                       </div>
-                      <h4 className="text-[10px] font-black text-[#87a3a3] uppercase mb-5 tracking-[0.3em]">Strategy & Protocol</h4>
+                      <h4 className="text-[10px] font-black text-[#87a3a3] uppercase mb-5 tracking-[0.3em]">{t('maintenance.strategy_protocol')}</h4>
                       <p className="text-white font-medium text-base leading-relaxed italic">
                         &quot;{advice}&quot;
                       </p>
@@ -274,23 +285,23 @@ const Maintenance: React.FC<MaintenanceProps> = ({ tasks, setTasks, properties }
 
                     <div className="grid grid-cols-2 gap-5">
                       <div className="bg-white/5 p-6 rounded-[24px] border border-white/10">
-                        <p className="text-[9px] text-[#87a3a3] uppercase font-black mb-2 tracking-widest">Est. Cost Basis</p>
+                        <p className="text-[9px] text-[#87a3a3] uppercase font-black mb-2 tracking-widest">{t('maintenance.cost_basis')}</p>
                         <p className="text-2xl font-black text-white">$---</p>
                         <div className="h-1 w-full bg-white/10 rounded-full mt-4 overflow-hidden">
                           <div className="h-full bg-[#87a3a3] w-1/3"></div>
                         </div>
                       </div>
                       <div className="bg-white/5 p-6 rounded-[24px] border border-white/10">
-                        <p className="text-[9px] text-emerald-500 uppercase font-black mb-2 tracking-widest">SLA Deadline</p>
+                        <p className="text-[9px] text-emerald-500 uppercase font-black mb-2 tracking-widest">{t('maintenance.sla_deadline')}</p>
                         <p className="text-2xl font-black text-white">{selectedTask.dueDate.split('-').slice(1).join('/')}</p>
-                        <p className="text-[9px] text-white/30 mt-3 font-bold">On Schedule</p>
+                        <p className="text-[9px] text-white/30 mt-3 font-bold">{t('maintenance.on_schedule')}</p>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
               <button className="mt-10 w-full py-5 bg-[#87a3a3] text-white rounded-[24px] font-black text-xs uppercase tracking-[0.2em] hover:bg-[#6b8686] hover:translate-y-[-2px] transition-all shadow-xl shadow-[#87a3a320] active:translate-y-0 active:scale-95">
-                Advance To Next Phase
+                {t('maintenance.advance_phase')}
               </button>
             </>
           ) : (
@@ -302,8 +313,8 @@ const Maintenance: React.FC<MaintenanceProps> = ({ tasks, setTasks, properties }
                 </div>
               </div>
               <div className="max-w-xs space-y-4">
-                <h4 className="text-2xl font-black text-white tracking-tight">System Ready</h4>
-                <p className="text-slate-500 font-bold text-sm leading-relaxed tracking-tight">Select a job profile from the ledger to initiate AI-assisted coordination and scheduling protocols.</p>
+                <h4 className="text-2xl font-black text-white tracking-tight">{t('maintenance.system_ready')}</h4>
+                <p className="text-slate-500 font-bold text-sm leading-relaxed tracking-tight">{t('maintenance.select_job')}</p>
               </div>
               <div className="flex gap-2">
                 {[1,2,3].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/10"></div>)}

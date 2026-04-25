@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Lease, Property } from '@/shared/types';
+import { useTranslation } from '@/core/i18n/I18nContext';
 
 interface LeasesProps {
   leases: Lease[];
@@ -9,6 +10,7 @@ interface LeasesProps {
 }
 
 const Leases: React.FC<LeasesProps> = ({ leases, setLeases: _setLeases, properties }) => {
+  const { t } = useTranslation();
   const [filterStatus, setFilterStatus] = useState<Lease['status'] | 'All'>('All');
 
   const filteredLeases = useMemo(() => {
@@ -26,15 +28,26 @@ const Leases: React.FC<LeasesProps> = ({ leases, setLeases: _setLeases, properti
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'All': return t('leases.all');
+      case 'Active': return t('leases.active');
+      case 'Pending': return t('leases.pending');
+      case 'Expiring': return t('leases.expiring');
+      case 'Terminated': return t('leases.terminated');
+      default: return status;
+    }
+  };
+
   return (
     <div className="space-y-8 animate-fadeIn bg-white">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h2 className="text-4xl font-black text-slate-500 tracking-tight">Legal Agreements</h2>
-          <p className="text-slate-400 font-medium">Tenant contracts, occupancy terms, and active leases.</p>
+          <h2 className="text-4xl font-black text-slate-500 tracking-tight">{t('leases.title')}</h2>
+          <p className="text-slate-400 font-medium">{t('leases.subtitle')}</p>
         </div>
         <button className="px-8 py-4 bg-[#87a3a3] text-white rounded-[24px] font-black text-xs uppercase tracking-widest shadow-xl shadow-[#87a3a340] hover:bg-[#6b8686] transition-all">
-          + Draft Lease
+          {t('leases.draft_btn')}
         </button>
       </div>
 
@@ -49,7 +62,7 @@ const Leases: React.FC<LeasesProps> = ({ leases, setLeases: _setLeases, properti
                 : 'text-slate-300 hover:text-slate-500'
             }`}
           >
-            {status}
+            {getStatusLabel(status)}
           </button>
         ))}
       </div>
@@ -59,12 +72,12 @@ const Leases: React.FC<LeasesProps> = ({ leases, setLeases: _setLeases, properti
           <table className="w-full text-left">
             <thead className="bg-white border-b border-slate-100">
               <tr>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Lessee</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Asset Location</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Contractual Term</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Monthly Commitment</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Status</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest text-right">Execution</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">{t('leases.lessee')}</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">{t('leases.asset_location')}</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">{t('leases.contractual_term')}</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">{t('leases.monthly_commitment')}</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">{t('leases.status')}</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest text-right">{t('leases.execution')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -83,22 +96,22 @@ const Leases: React.FC<LeasesProps> = ({ leases, setLeases: _setLeases, properti
                     <div className="text-xs font-bold text-slate-300 uppercase tracking-tighter">{lease.startDate} <span className="mx-2 text-slate-100">—</span> {lease.endDate}</div>
                   </td>
                   <td className="px-8 py-6 font-black text-[#87a3a3]">
-                    ${lease.monthlyRent.toLocaleString()}<span className="text-[9px] uppercase tracking-widest text-slate-200 ml-1">/ mo</span>
+                    ${lease.monthlyRent.toLocaleString()}<span className="text-[9px] uppercase tracking-widest text-slate-200 ml-1">/ {t('dashboard.monthly') === 'Monthly' ? 'mo' : 'mes'}</span>
                   </td>
                   <td className="px-8 py-6">
                     <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest ${getStatusStyle(lease.status)}`}>
-                      {lease.status}
+                      {getStatusLabel(lease.status)}
                     </span>
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <button className="text-[10px] font-black uppercase tracking-widest text-slate-200 hover:text-[#87a3a3] transition-colors border border-slate-100 px-4 py-2 rounded-xl hover:bg-slate-50">Legal Audit</button>
+                    <button className="text-[10px] font-black uppercase tracking-widest text-slate-200 hover:text-[#87a3a3] transition-colors border border-slate-100 px-4 py-2 rounded-xl hover:bg-slate-50">{t('leases.legal_audit')}</button>
                   </td>
                 </tr>
               ))}
               {filteredLeases.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-8 py-20 text-center">
-                    <p className="text-slate-200 font-bold italic">No contract matching the criteria &quot;{filterStatus}&quot; found.</p>
+                    <p className="text-slate-200 font-bold italic">{t('leases.no_contracts').replace('{filter}', getStatusLabel(filterStatus))}</p>
                   </td>
                 </tr>
               )}

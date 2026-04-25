@@ -1,25 +1,27 @@
 
 import React, { useState, useEffect } from 'react';
 import { checkApiConnection } from '@/core/services/geminiService';
+import { useTranslation } from '@/core/i18n/I18nContext';
 
 type Status = 'checking' | 'ok' | 'error';
 
 const StatusIndicator: React.FC<{ status: Status }> = ({ status }) => {
+  const { t } = useTranslation();
   const styles = {
     checking: {
       dot: 'bg-yellow-400 animate-pulse',
       text: 'text-yellow-500',
-      message: 'Checking...',
+      message: t('status.checking'),
     },
     ok: {
       dot: 'bg-emerald-500',
       text: 'text-emerald-600',
-      message: 'Operational',
+      message: t('status.operational'),
     },
     error: {
       dot: 'bg-red-500',
       text: 'text-red-600',
-      message: 'Error Detected',
+      message: t('status.error_detected'),
     },
   };
 
@@ -36,6 +38,7 @@ const StatusIndicator: React.FC<{ status: Status }> = ({ status }) => {
 };
 
 const SystemStatus: React.FC = () => {
+  const { t } = useTranslation();
   const [apiKeyStatus, setApiKeyStatus] = useState<Status>('checking');
   const [apiConnectionStatus, setApiConnectionStatus] = useState<Status>('checking');
 
@@ -61,17 +64,17 @@ const SystemStatus: React.FC = () => {
     <>
       <div className="space-y-8 animate-fadeIn">
         <div>
-          <h2 className="text-4xl font-black text-slate-500 tracking-tight">System Status</h2>
-          <p className="text-slate-400 font-medium">Real-time diagnostics of core application services.</p>
+          <h2 className="text-4xl font-black text-slate-500 tracking-tight">{t('status.title')}</h2>
+          <p className="text-slate-400 font-medium">{t('status.subtitle')}</p>
         </div>
         
         <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 p-10 space-y-8">
           {/* API Key Check */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-6 bg-slate-50 rounded-2xl">
             <div>
-              <h3 className="font-bold text-slate-600">Environment Configuration</h3>
+              <h3 className="font-bold text-slate-600">{t('status.env_config')}</h3>
               <p className="text-sm text-slate-400 mt-1">
-                Verifies that the Gemini API key is loaded from the <code>.env</code> file correctly.
+                {t('status.env_config_desc')}
               </p>
             </div>
             <StatusIndicator status={apiKeyStatus} />
@@ -80,9 +83,9 @@ const SystemStatus: React.FC = () => {
           {/* API Connection Check */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-6 bg-slate-50 rounded-2xl">
             <div>
-              <h3 className="font-bold text-slate-600">Gemini API Connectivity</h3>
+              <h3 className="font-bold text-slate-600">{t('status.gemini_connectivity')}</h3>
               <p className="text-sm text-slate-400 mt-1">
-                Performs a live test call to ensure the API is reachable and the key is valid.
+                {t('status.gemini_connectivity_desc')}
               </p>
             </div>
             <StatusIndicator status={apiConnectionStatus} />

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Transaction, Property } from '@/shared/types';
 import { analyzeAccounting } from '@/core/services/geminiService';
+import { useTranslation } from '@/core/i18n/I18nContext';
 
 interface AccountingProps {
   transactions: Transaction[];
@@ -10,6 +11,7 @@ interface AccountingProps {
 }
 
 const Accounting: React.FC<AccountingProps> = ({ transactions, setTransactions: _setTransactions, properties }) => {
+  const { t } = useTranslation();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<string | null>(null);
 
@@ -18,7 +20,7 @@ const Accounting: React.FC<AccountingProps> = ({ transactions, setTransactions: 
     const correlationId = crypto.randomUUID();
     const dataString = JSON.stringify(transactions.map(t => ({ d: t.description, a: t.amount, ty: t.type })));
     const result = await analyzeAccounting(dataString, correlationId);
-    setAnalysis(result || "Analysis not available.");
+    setAnalysis(result || t('accounting.analysis_not_available'));
     setIsAnalyzing(false);
   };
 
@@ -26,8 +28,8 @@ const Accounting: React.FC<AccountingProps> = ({ transactions, setTransactions: 
     <div className="space-y-6 animate-fadeIn bg-white">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-black text-slate-500 tracking-tight">Accounting Ledger</h2>
-          <p className="text-slate-400 font-medium">Full financial audit and transaction history.</p>
+          <h2 className="text-3xl font-black text-slate-500 tracking-tight">{t('accounting.title')}</h2>
+          <p className="text-slate-400 font-medium">{t('accounting.subtitle')}</p>
         </div>
         <div className="flex gap-3">
           <button 
@@ -36,18 +38,18 @@ const Accounting: React.FC<AccountingProps> = ({ transactions, setTransactions: 
             className="px-5 py-3 bg-[#87a3a315] text-[#87a3a3] rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-[#87a3a325] transition-all disabled:opacity-50"
           >
             {isAnalyzing ? (
-              <span className="animate-pulse">Consulting AI...</span>
+              <span className="animate-pulse">{t('accounting.consulting_ai')}</span>
             ) : (
               <>
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                AI Audit
+                {t('accounting.ai_audit')}
               </>
             )}
           </button>
           <button className="px-6 py-3 bg-[#87a3a3] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-[#87a3a340] hover:bg-[#6b8686] hover:translate-y-[-2px] active:translate-y-0 transition-all">
-            + Log Entry
+            {t('accounting.log_entry')}
           </button>
         </div>
       </div>
@@ -65,7 +67,7 @@ const Accounting: React.FC<AccountingProps> = ({ transactions, setTransactions: 
             </svg>
           </button>
           <h3 className="font-black text-lg mb-4 flex items-center gap-3">
-            Intelligence Report
+            {t('accounting.intelligence_report')}
           </h3>
           <p className="text-white/90 leading-relaxed font-medium italic">&quot;{analysis}&quot;</p>
         </div>
@@ -76,11 +78,11 @@ const Accounting: React.FC<AccountingProps> = ({ transactions, setTransactions: 
           <table className="w-full text-left">
             <thead className="bg-white border-b border-slate-100">
               <tr>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Date</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Asset</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Descriptor</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Categorization</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest text-right">Valuation</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">{t('accounting.date')}</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">{t('accounting.asset')}</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">{t('accounting.descriptor')}</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">{t('accounting.categorization')}</th>
+                <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest text-right">{t('accounting.valuation')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">

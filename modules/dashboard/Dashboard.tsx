@@ -3,6 +3,7 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Property, Transaction, MaintenanceTask } from '@/shared/types';
 import { COLORS } from '@/shared/ui/constants';
+import { useTranslation } from '@/core/i18n/I18nContext';
 
 interface DashboardProps {
   properties: Property[];
@@ -11,6 +12,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ properties, transactions, tasks }) => {
+  const { t } = useTranslation();
   const totalIncome = transactions.filter(t => t.type === 'Income').reduce((acc, curr) => acc + curr.amount, 0);
   const totalExpense = transactions.filter(t => t.type === 'Expense').reduce((acc, curr) => acc + curr.amount, 0);
   const balance = totalIncome - totalExpense;
@@ -26,12 +28,12 @@ const Dashboard: React.FC<DashboardProps> = ({ properties, transactions, tasks }
     <div className="space-y-8 animate-fadeIn bg-white">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-4xl font-black text-slate-500 tracking-tight">Portfolio Overview</h2>
-          <p className="text-slate-400 font-medium">Real-time health of Lot 202 properties.</p>
+          <h2 className="text-4xl font-black text-slate-500 tracking-tight">{t('dashboard.title')}</h2>
+          <p className="text-slate-400 font-medium">{t('dashboard.subtitle')}</p>
         </div>
         <div className="flex bg-white p-1 rounded-xl shadow-sm border border-slate-100">
-          <button className="px-4 py-2 text-xs font-bold bg-[#87a3a3] text-white rounded-lg shadow-md transition-all">Yearly</button>
-          <button className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-slate-600 transition-all">Monthly</button>
+          <button className="px-4 py-2 text-xs font-bold bg-[#87a3a3] text-white rounded-lg shadow-md transition-all">{t('dashboard.yearly')}</button>
+          <button className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-slate-600 transition-all">{t('dashboard.monthly')}</button>
         </div>
       </header>
 
@@ -46,7 +48,7 @@ const Dashboard: React.FC<DashboardProps> = ({ properties, transactions, tasks }
             </div>
             <span className="text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">+12.5%</span>
           </div>
-          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Net Revenue</p>
+          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('dashboard.net_revenue')}</p>
           <p className={`text-3xl font-black mt-1 ${balance >= 0 ? 'text-slate-500' : 'text-rose-400'}`}>
             ${balance.toLocaleString()}
           </p>
@@ -60,9 +62,9 @@ const Dashboard: React.FC<DashboardProps> = ({ properties, transactions, tasks }
               </svg>
             </div>
           </div>
-          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Active Units</p>
+          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('dashboard.active_units')}</p>
           <p className="text-3xl font-black mt-1 text-slate-500">{properties.length}</p>
-          <p className="text-[10px] font-bold text-slate-300 mt-2 uppercase tracking-tighter">{properties.filter(p => p.status === 'Occupied').length} Currently Leased</p>
+          <p className="text-[10px] font-bold text-slate-300 mt-2 uppercase tracking-tighter">{properties.filter(p => p.status === 'Occupied').length} {t('dashboard.occupied')}</p>
         </div>
 
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-all">
@@ -73,9 +75,9 @@ const Dashboard: React.FC<DashboardProps> = ({ properties, transactions, tasks }
               </svg>
             </div>
           </div>
-          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Maint. Opex</p>
+          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('dashboard.maint_opex')}</p>
           <p className="text-3xl font-black mt-1 text-rose-400">${totalExpense.toLocaleString()}</p>
-          <p className="text-[10px] font-bold text-slate-300 mt-2 uppercase tracking-tighter">YTD Operational Spending</p>
+          <p className="text-[10px] font-bold text-slate-300 mt-2 uppercase tracking-tighter">{t('dashboard.ytd_spending')}</p>
         </div>
 
         <div className="bg-[#87a3a3] p-6 rounded-3xl shadow-lg border border-[#6b8686] hover:shadow-xl transition-all group">
@@ -86,9 +88,9 @@ const Dashboard: React.FC<DashboardProps> = ({ properties, transactions, tasks }
               </svg>
             </div>
           </div>
-          <p className="text-white/70 text-xs font-bold uppercase tracking-widest">Active Jobs</p>
+          <p className="text-white/70 text-xs font-bold uppercase tracking-widest">{t('dashboard.active_jobs')}</p>
           <p className="text-3xl font-black mt-1 text-white">{pendingTasksCount}</p>
-          <p className="text-[10px] font-bold text-white/50 mt-2 uppercase tracking-tighter">Action Required in {tasks.filter(t => t.priority === 'High').length} Tasks</p>
+          <p className="text-[10px] font-bold text-white/50 mt-2 uppercase tracking-tighter">{t('dashboard.action_required').replace('{count}', tasks.filter(t => t.priority === 'High').length.toString())}</p>
         </div>
       </div>
 
@@ -96,8 +98,8 @@ const Dashboard: React.FC<DashboardProps> = ({ properties, transactions, tasks }
         {/* Charts Section */}
         <div className="lg:col-span-2 bg-white p-8 rounded-[32px] shadow-sm border border-slate-100 min-h-[450px]">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xl font-black text-slate-500 tracking-tight">Financial Pulse</h3>
-            <button className="text-sm font-bold text-[#87a3a3] hover:underline">Full Report</button>
+            <h3 className="text-xl font-black text-slate-500 tracking-tight">{t('dashboard.financial_pulse')}</h3>
+            <button className="text-sm font-bold text-[#87a3a3] hover:underline">{t('dashboard.full_report')}</button>
           </div>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -128,7 +130,7 @@ const Dashboard: React.FC<DashboardProps> = ({ properties, transactions, tasks }
 
         {/* Recent Activity */}
         <div className="bg-white p-8 rounded-[32px] shadow-sm border border-slate-100">
-          <h3 className="text-xl font-black text-slate-500 tracking-tight mb-8">Service Queue</h3>
+          <h3 className="text-xl font-black text-slate-500 tracking-tight mb-8">{t('dashboard.service_queue')}</h3>
           <div className="space-y-5">
             {tasks.filter(t => t.status !== 'Complete').slice(0, 5).map(task => (
               <div key={task.id} className="flex items-center gap-4 group cursor-pointer">
@@ -152,12 +154,12 @@ const Dashboard: React.FC<DashboardProps> = ({ properties, transactions, tasks }
             ))}
             {tasks.filter(t => t.status !== 'Complete').length === 0 && (
               <div className="py-20 text-center">
-                <p className="text-sm text-slate-300 font-bold italic">Queue Cleared</p>
+                <p className="text-sm text-slate-300 font-bold italic">{t('dashboard.queue_cleared')}</p>
               </div>
             )}
           </div>
           <button className="w-full mt-8 py-4 text-[#87a3a3] font-black text-xs uppercase tracking-widest bg-white rounded-2xl hover:bg-[#87a3a315] transition-all border border-slate-100">
-            View Operations
+            {t('dashboard.view_operations')}
           </button>
         </div>
       </div>

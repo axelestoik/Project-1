@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Invoice, Property, Quote, RecurringInvoice, Payment } from '@/shared/types';
+import { useTranslation } from '@/core/i18n/I18nContext';
 
 interface BillingProps {
   invoices: Invoice[];
@@ -21,14 +22,15 @@ const Billing: React.FC<BillingProps> = ({
   payments, 
   properties 
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<BillingSubView>('invoices');
 
   const tabs: { id: BillingSubView; label: string }[] = [
-    { id: 'quotes', label: 'Quotes' },
-    { id: 'retainers', label: 'Retainers' },
-    { id: 'invoices', label: 'Invoices' },
-    { id: 'recurring', label: 'Recurring' },
-    { id: 'payments', label: 'History' },
+    { id: 'quotes', label: t('billing.tabs.quotes') },
+    { id: 'retainers', label: t('billing.tabs.retainers') },
+    { id: 'invoices', label: t('billing.tabs.invoices') },
+    { id: 'recurring', label: t('billing.tabs.recurring') },
+    { id: 'payments', label: t('billing.tabs.history') },
   ];
 
   const renderActiveContent = () => {
@@ -44,13 +46,13 @@ const Billing: React.FC<BillingProps> = ({
                   }`}>
                     {quote.status}
                   </span>
-                  <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Valid til {quote.expiryDate}</p>
+                  <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">{t('billing.valid_til').replace('{date}', quote.expiryDate)}</p>
                 </div>
                 <h3 className="font-black text-slate-500 text-xl mb-1 group-hover:text-[#87a3a3] transition-colors">{quote.clientName}</h3>
                 <p className="text-xs font-bold text-slate-300 uppercase tracking-widest mb-6">{properties.find(p => p.id === quote.propertyId)?.name}</p>
                 <div className="pt-6 border-t border-slate-50 flex justify-between items-center">
                   <div className="flex flex-col">
-                    <span className="text-[9px] font-black text-slate-200 uppercase tracking-widest">Proposal Total</span>
+                    <span className="text-[9px] font-black text-slate-200 uppercase tracking-widest">{t('billing.proposal_total')}</span>
                     <span className="text-2xl font-black text-slate-500">${quote.amount.toLocaleString()}</span>
                   </div>
                   <button className="p-3 bg-white text-[#87a3a3] rounded-2xl hover:bg-[#87a3a3] hover:text-white transition-all shadow-sm border border-slate-100">
@@ -73,8 +75,8 @@ const Billing: React.FC<BillingProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <p className="text-slate-300 font-bold italic mb-6">Secured funds ledger is currently empty.</p>
-            <button className="px-8 py-4 bg-[#87a3a3] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-[#87a3a320] hover:bg-[#6b8686] transition-all">+ Initial Deposit</button>
+            <p className="text-slate-300 font-bold italic mb-6">{t('billing.secured_funds_ledger')}</p>
+            <button className="px-8 py-4 bg-[#87a3a3] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-[#87a3a320] hover:bg-[#6b8686] transition-all">{t('billing.initial_deposit')}</button>
           </div>
         );
 
@@ -103,13 +105,13 @@ const Billing: React.FC<BillingProps> = ({
                       </div>
                     ))}
                     <div className="pt-6 border-t border-slate-50 flex justify-between items-center">
-                      <span className="text-[10px] font-black text-slate-200 uppercase tracking-widest">Total Invoice</span>
+                      <span className="text-[10px] font-black text-slate-200 uppercase tracking-widest">{t('billing.total_invoice')}</span>
                       <span className="text-2xl font-black text-[#87a3a3]">${invoice.amount.toLocaleString()}</span>
                     </div>
                   </div>
                   <div className="flex gap-3">
-                    <button className="flex-1 py-4 bg-white text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all border border-slate-100">PDF</button>
-                    <button className="flex-1 py-4 bg-[#87a3a3] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#87a3a320] hover:bg-[#6b8686] transition-all">Settle</button>
+                    <button className="flex-1 py-4 bg-white text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all border border-slate-100">{t('billing.pdf')}</button>
+                    <button className="flex-1 py-4 bg-[#87a3a3] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#87a3a320] hover:bg-[#6b8686] transition-all">{t('billing.settle')}</button>
                   </div>
                 </div>
               </div>
@@ -124,11 +126,11 @@ const Billing: React.FC<BillingProps> = ({
               <table className="w-full text-left">
                 <thead className="bg-white border-b border-slate-100">
                   <tr>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Account</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Cycle</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Renewal</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Revenue</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">State</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">{t('billing.account')}</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">{t('billing.cycle')}</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">{t('billing.renewal')}</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">{t('billing.revenue')}</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">{t('billing.state')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -160,10 +162,10 @@ const Billing: React.FC<BillingProps> = ({
               <table className="w-full text-left">
                 <thead className="bg-white border-b border-slate-100">
                   <tr>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Date Received</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Instrument</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">Txn Reference</th>
-                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest text-right">Settled Amount</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">{t('billing.date_received')}</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">{t('billing.instrument')}</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest">{t('billing.txn_reference')}</th>
+                    <th className="px-8 py-5 text-[10px] font-black text-slate-300 uppercase tracking-widest text-right">{t('billing.settled_amount')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -189,23 +191,23 @@ const Billing: React.FC<BillingProps> = ({
     <div className="space-y-8 animate-fadeIn bg-white">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h2 className="text-4xl font-black text-slate-500 tracking-tight">Financial Treasury</h2>
-          <p className="text-slate-400 font-medium">Global billing, accounts receivable, and proposal management.</p>
+          <h2 className="text-4xl font-black text-slate-500 tracking-tight">{t('billing.title')}</h2>
+          <p className="text-slate-400 font-medium">{t('billing.subtitle')}</p>
         </div>
         <div className="flex gap-4">
           <button className="px-8 py-4 bg-[#87a3a3] text-white rounded-[24px] font-black text-xs uppercase tracking-widest shadow-xl shadow-[#87a3a340] hover:bg-[#6b8686] transition-all">
-            + New Action
+            {t('billing.new_action')}
           </button>
         </div>
       </div>
 
       {/* Secondary Sub-Navigation */}
-      <div className="flex bg-white rounded-[24px] p-2 border border-slate-100 w-fit">
+      <div className="flex bg-white rounded-[24px] p-2 border border-slate-100 w-full md:w-fit overflow-x-auto no-scrollbar scroll-smooth">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`px-8 py-3.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-2xl ${
+            className={`px-8 py-3.5 text-[10px] font-black uppercase tracking-widest transition-all rounded-2xl whitespace-nowrap ${
               activeTab === tab.id 
                 ? 'bg-[#87a3a3] text-white shadow-sm' 
                 : 'text-slate-300 hover:text-slate-500'

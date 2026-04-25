@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { useAuth } from '@/core/auth/AuthContext';
 import { useTranslation } from '@/core/i18n/I18nContext';
 import { USER_ROLES } from '@/core/auth/roles';
 import ProtectedContent from '@/shared/ui/ProtectedContent';
@@ -24,7 +23,7 @@ const Settings: React.FC = () => {
           <div>
             <h3 className="font-bold text-slate-600">{t('settings.language')}</h3>
             <p className="text-sm text-slate-400 mt-1">
-              Select your preferred language for the user interface.
+              {t('settings.lang_desc')}
             </p>
           </div>
           <div className="flex gap-2 bg-white p-1.5 rounded-2xl border border-slate-200">

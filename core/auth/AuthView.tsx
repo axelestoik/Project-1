@@ -3,8 +3,10 @@ import React, { useState } from 'react';
 import { useAuth } from './AuthContext';
 import { Logo } from '@/shared/ui/constants';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTranslation } from '@/core/i18n/I18nContext';
 
 const AuthView: React.FC = () => {
+  const { t } = useTranslation();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,10 +46,10 @@ const AuthView: React.FC = () => {
         <div className="p-8 pb-4 flex flex-col items-center">
           <Logo size="lg" />
           <h1 className="mt-6 text-2xl font-bold text-slate-800 tracking-tight">
-            {isLogin ? 'Welcome back' : 'Create an account'}
+            {isLogin ? t('auth.welcome_back') : t('auth.create_account')}
           </h1>
           <p className="mt-2 text-slate-400 text-sm font-medium">
-            {isLogin ? 'Enter your credentials to manage your properties' : 'Join Lot 202 Property Management'}
+            {isLogin ? t('auth.login_desc') : t('auth.signup_desc')}
           </p>
         </div>
 
@@ -62,7 +64,7 @@ const AuthView: React.FC = () => {
                 className="grid grid-cols-2 gap-4 overflow-hidden"
               >
                 <div className="space-y-1.5">
-                  <label htmlFor="firstName" className="text-[10px] uppercase font-bold text-slate-400 tracking-widest px-1">First Name</label>
+                  <label htmlFor="firstName" className="text-[10px] uppercase font-bold text-slate-400 tracking-widest px-1">{t('auth.first_name')}</label>
                   <input
                     id="firstName"
                     type="text"
@@ -74,7 +76,7 @@ const AuthView: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label htmlFor="lastName" className="text-[10px] uppercase font-bold text-slate-400 tracking-widest px-1">Last Name</label>
+                  <label htmlFor="lastName" className="text-[10px] uppercase font-bold text-slate-400 tracking-widest px-1">{t('auth.last_name')}</label>
                   <input
                     id="lastName"
                     type="text"
@@ -90,7 +92,7 @@ const AuthView: React.FC = () => {
           </AnimatePresence>
 
           <div className="space-y-1.5">
-            <label htmlFor="email" className="text-[10px] uppercase font-bold text-slate-400 tracking-widest px-1">Email Address</label>
+            <label htmlFor="email" className="text-[10px] uppercase font-bold text-slate-400 tracking-widest px-1">{t('auth.email')}</label>
             <input
               id="email"
               type="email"
@@ -103,7 +105,7 @@ const AuthView: React.FC = () => {
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="password" className="text-[10px] uppercase font-bold text-slate-400 tracking-widest px-1">Password</label>
+            <label htmlFor="password" className="text-[10px] uppercase font-bold text-slate-400 tracking-widest px-1">{t('auth.password')}</label>
             <input
               id="password"
               type="password"
@@ -117,7 +119,7 @@ const AuthView: React.FC = () => {
 
           {!isLogin && (
              <div className="space-y-1.5">
-             <label htmlFor="organizationId" className="text-[10px] uppercase font-bold text-slate-400 tracking-widest px-1">Organization ID</label>
+             <label htmlFor="organizationId" className="text-[10px] uppercase font-bold text-slate-400 tracking-widest px-1">{t('auth.org_id')}</label>
              <input
                id="organizationId"
                type="text"
@@ -127,7 +129,7 @@ const AuthView: React.FC = () => {
                className="w-full bg-slate-50 border border-slate-100 text-slate-700 text-sm font-medium rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#87a3a350] transition-all"
                placeholder="org-01"
              />
-             <p className="text-[9px] text-slate-400 px-1 italic">Use &apos;org-01&apos; or &apos;org-02&apos; for the demo</p>
+             <p className="text-[9px] text-slate-400 px-1 italic">{t('auth.org_id_hint')}</p>
            </div>
           )}
 
@@ -146,25 +148,25 @@ const AuthView: React.FC = () => {
             disabled={loading}
             className="w-full bg-[#87a3a3] hover:bg-[#769191] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-[#87a3a330] transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mt-2"
           >
-            {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
+            {loading ? t('auth.processing') : (isLogin ? t('auth.signin') : t('auth.create_account_btn'))}
           </button>
         </form>
 
         <div className="p-8 bg-slate-50 border-t border-slate-100 text-center">
           <p className="text-sm text-slate-500 font-medium">
-            {isLogin ? "Don't have an account?" : "Already have an account?"}
+            {isLogin ? t('auth.no_account') : t('auth.have_account')}
             <button 
               onClick={() => setIsLogin(!isLogin)}
               className="ml-2 text-[#87a3a3] font-bold hover:underline"
             >
-              {isLogin ? 'Sign Up' : 'Log In'}
+              {isLogin ? t('auth.signup') : t('auth.login_link')}
             </button>
           </p>
         </div>
       </motion.div>
 
       <p className="mt-8 text-slate-400 text-[10px] uppercase font-bold tracking-widest">
-        Enterprise-Grade Property Management
+        {t('auth.footer')}
       </p>
     </div>
   );
