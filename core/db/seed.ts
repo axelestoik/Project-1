@@ -1,5 +1,6 @@
 
-import { Property, Transaction, MaintenanceTask, Invoice, Quote, RecurringInvoice, Payment, Lease, Jurisdiction, Branch } from './schema.ts';
+import { Property, Transaction, MaintenanceTask, Invoice, Quote, RecurringInvoice, Payment, Lease, Jurisdiction, Branch, User, Membership } from './schema.ts';
+import bcrypt from 'bcryptjs';
 
 export const initialJurisdictions: Jurisdiction[] = [
   { 
@@ -31,7 +32,23 @@ export const initialBranches: Branch[] = [
   }
 ];
 
+export const getInitialUsers = async (): Promise<User[]> => {
+  const hash = await bcrypt.hash('password123', 10);
+  return [
+    { id: 'user-01', email: 'overlap@lot202.com', passwordHash: hash, firstName: 'Over', lastName: 'Lap', organizationId: 'org-01', createdAt: '2024-01-01', platformRole: 'None', status: 'Active' },
+    { id: 'user-02', email: 'tenant@lot202.com', passwordHash: hash, firstName: 'Tenant', lastName: 'User', organizationId: 'org-01', createdAt: '2024-01-01', platformRole: 'None', status: 'Active' },
+    { id: 'user-admin', email: 'admin@lot202.com', passwordHash: hash, firstName: 'Super', lastName: 'Admin', organizationId: 'org-01', createdAt: '2024-01-01', platformRole: 'PlatformAdmin', status: 'Active' },
+  ] as unknown as User[];
+};
+
+export const initialMemberships: Membership[] = [
+  { userId: 'user-01', organizationId: 'org-01', role: 'Staff', branchIds: ['br-ca-01'], status: 'Active', assignedBy: 'system', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+  { userId: 'user-01', organizationId: 'org-02', role: 'Tenant', branchIds: [], status: 'Active', assignedBy: 'system', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+  { userId: 'user-02', organizationId: 'org-01', role: 'Tenant', branchIds: [], status: 'Active', assignedBy: 'system', createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+];
+
 export const initialProperties: Property[] = [
+
   { id: '1', organizationId: 'org-01', branchId: 'br-ca-01', name: 'Hillside Manor', address: '123 Hill St.', type: 'House', status: 'Occupied' },
   { id: '2', organizationId: 'org-01', branchId: 'br-on-01', name: 'Central Park Apt', address: '10th Ave #20-30', type: 'Apartment', status: 'Maintenance' },
 ];

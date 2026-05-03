@@ -35,13 +35,24 @@ export interface Organization {
   updatedAt: string;
 }
 
+export interface User {
+  id: string;
+  email: string;
+  passwordHash: string;
+  firstName: string;
+  lastName: string;
+  organizationId: string;
+  createdAt: string;
+}
+
 export interface Membership {
   userId: string;
   organizationId: string;
   role: UserRole;
+  status: 'Active' | 'Inactive';
   createdAt: string;
   updatedAt: string;
-  createdBy: string;
+  assignedBy: string;
   branchIds?: string[]; // Para acceso rápido a sucursales asignadas
 }
 

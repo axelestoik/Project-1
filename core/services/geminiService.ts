@@ -17,12 +17,19 @@ function getAI() {
 
 const handleError = (error: unknown, correlationId?: string, operation?: string) => {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    logger.error(`Gemini API Error in ${operation}`, {
-      correlationId,
-      error: errorMessage,
-    });
-    // Do not leak detailed error info to the client-side UI, but provide the correlation ID for debugging.
-    return `An error occurred during ${operation}. Please check logs for Correlation ID: ${correlationId}.`;
+    
+    if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
+      logger.warn(`Gemini API Quota Exceeded in ${operation}`, {
+        correlationId,
+      });
+      return `Service temporarily unavailable due to API quota limits. Please try again later.`;
+    } else {
+      logger.error(`Gemini API Error in ${operation}`, {
+        correlationId,
+        error: errorMessage,
+      });
+      return `An error occurred during ${operation}. Please check logs for Correlation ID: ${correlationId}.`;
+    }
 };
 
 export async function getMaintenanceAdvice(taskTitle: string, description: string, correlationId: string) {
@@ -59,7 +66,9 @@ export async function analyzeAccounting(data: string, correlationId: string) {
   }
 }
 
-export async function checkApiConnection(correlationId: string): Promise<boolean> {
+export type ConnectionStatus = 'ok' | 'error' | 'quota_exceeded';
+
+export async function checkApiConnection(correlationId: string): Promise<ConnectionStatus> {
   const operation = 'checkApiConnection';
   logger.info('Starting operation', { correlationId, operation });
 
@@ -71,13 +80,21 @@ export async function checkApiConnection(correlationId: string): Promise<boolean
       contents: [{ role: 'user', parts: [{ text: 'System check: respond with "OK".' }] }],
     });
     logger.info('Operation successful', { correlationId, operation });
-    return true; // Success
+    return 'ok'; // Success
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    logger.error(`Gemini API Error in ${operation}`, {
-      correlationId,
-      error: errorMessage,
-    });
-    return false; // Failure
+    
+    if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
+      logger.warn(`Gemini API Quota Exceeded in ${operation}`, {
+        correlationId,
+      });
+      return 'quota_exceeded';
+    } else {
+      logger.error(`Gemini API Error in ${operation}`, {
+        correlationId,
+        error: errorMessage,
+      });
+      return 'error';
+    }
   }
 }

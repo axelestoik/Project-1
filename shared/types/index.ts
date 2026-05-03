@@ -9,5 +9,7 @@ export enum View {
   Properties = 'properties',
   Leases = 'leases',
   Status = 'status',
-  Settings = 'settings'
+  Members = 'members',
+  Settings = 'settings',
+  Changelog = 'changelog'
 }

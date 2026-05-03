@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { Logo } from '@/shared/ui/constants';
 import { motion, AnimatePresence } from 'motion/react';
@@ -7,16 +7,44 @@ import { useTranslation } from '@/core/i18n/I18nContext';
 
 const AuthView: React.FC = () => {
   const { t } = useTranslation();
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [organizationId, setOrganizationId] = useState('org-01'); // Defaulting for simple demo
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [view, setView] = useState<'login' | 'register'>('login');
+  const [token, setToken] = useState<string | null>(null);
 
-  const { login, register } = useAuth();
+  const { login } = useAuth();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tkn = params.get('token');
+    if (tkn) {
+      setToken(tkn);
+      setView('register');
+      validateToken(tkn);
+    }
+  }, []);
+
+  const validateToken = async (tkn: string) => {
+    try {
+      let res = await fetch(`/api/invitations/validate/${tkn}`);
+      if (!res.ok) {
+        // Fallback to platform invite
+        res = await fetch(`/api/platform/invitations/validate/${tkn}`);
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || 'Invitation is invalid or expired');
+        }
+      }
+      const data = await res.json();
+      setEmail(data.email);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Invalid invitation');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,10 +52,29 @@ const AuthView: React.FC = () => {
     setLoading(true);
 
     try {
-      if (isLogin) {
+      if (view === 'login') {
         await login({ email, password });
       } else {
-        await register({ email, password, firstName, lastName, organizationId });
+        let res = await fetch('/api/invitations/accept', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, email, password, firstName, lastName })
+        });
+        if (res.status === 404 || res.status === 400) {
+           // Try platform registration as fallback if invitation not found or invalid
+           const platformRes = await fetch('/api/platform/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token, email, password, firstName, lastName })
+           });
+           if (platformRes.ok) { res = platformRes; }
+        }
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.message || 'Registration failed');
+        }
+        // After registration, log in
+        await login({ email, password });
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -46,50 +93,42 @@ const AuthView: React.FC = () => {
         <div className="p-8 pb-4 flex flex-col items-center">
           <Logo size="lg" />
           <h1 className="mt-6 text-2xl font-bold text-slate-800 tracking-tight">
-            {isLogin ? t('auth.welcome_back') : t('auth.create_account')}
+            {view === 'login' ? t('auth.welcome_back') : 'Complete Registration'}
           </h1>
-          <p className="mt-2 text-slate-400 text-sm font-medium">
-            {isLogin ? t('auth.login_desc') : t('auth.signup_desc')}
+          <p className="mt-2 text-slate-400 text-sm font-medium text-center px-4">
+            {view === 'login' ? t('auth.login_desc') : 'You have been invited to join the platform. Please set up your account.'}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 pt-4 space-y-4">
-          <AnimatePresence mode="wait">
-            {!isLogin && (
-              <motion.div 
-                key="register-fields"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="grid grid-cols-2 gap-4 overflow-hidden"
-              >
-                <div className="space-y-1.5">
-                  <label htmlFor="firstName" className="text-[10px] uppercase font-bold text-slate-400 tracking-widest px-1">{t('auth.first_name')}</label>
-                  <input
-                    id="firstName"
-                    type="text"
-                    required
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-100 text-slate-700 text-sm font-medium rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#87a3a350] transition-all"
-                    placeholder="John"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label htmlFor="lastName" className="text-[10px] uppercase font-bold text-slate-400 tracking-widest px-1">{t('auth.last_name')}</label>
-                  <input
-                    id="lastName"
-                    type="text"
-                    required
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-100 text-slate-700 text-sm font-medium rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#87a3a350] transition-all"
-                    placeholder="Doe"
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {view === 'register' && (
+            <div className="flex gap-4">
+              <div className="space-y-1.5 flex-1">
+                <label htmlFor="firstName" className="text-[10px] uppercase font-bold text-slate-400 tracking-widest px-1">First Name</label>
+                <input
+                  id="firstName"
+                  required
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-100 text-slate-700 text-sm font-medium rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#87a3a350] transition-all"
+                  placeholder="John"
+                />
+              </div>
+              <div className="space-y-1.5 flex-1">
+                <label htmlFor="lastName" className="text-[10px] uppercase font-bold text-slate-400 tracking-widest px-1">Last Name</label>
+                <input
+                  id="lastName"
+                  required
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-100 text-slate-700 text-sm font-medium rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#87a3a350] transition-all"
+                  placeholder="Doe"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <label htmlFor="email" className="text-[10px] uppercase font-bold text-slate-400 tracking-widest px-1">{t('auth.email')}</label>
@@ -97,9 +136,10 @@ const AuthView: React.FC = () => {
               id="email"
               type="email"
               required
+              readOnly={!!token}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-100 text-slate-700 text-sm font-medium rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#87a3a350] transition-all"
+              className={`w-full bg-slate-50 border border-slate-100 text-slate-700 text-sm font-medium rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#87a3a350] transition-all ${token ? 'opacity-70 cursor-not-allowed' : ''}`}
               placeholder="name@company.com"
             />
           </div>
@@ -117,22 +157,6 @@ const AuthView: React.FC = () => {
             />
           </div>
 
-          {!isLogin && (
-             <div className="space-y-1.5">
-             <label htmlFor="organizationId" className="text-[10px] uppercase font-bold text-slate-400 tracking-widest px-1">{t('auth.org_id')}</label>
-             <input
-               id="organizationId"
-               type="text"
-               required
-               value={organizationId}
-               onChange={(e) => setOrganizationId(e.target.value)}
-               className="w-full bg-slate-50 border border-slate-100 text-slate-700 text-sm font-medium rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#87a3a350] transition-all"
-               placeholder="org-01"
-             />
-             <p className="text-[9px] text-slate-400 px-1 italic">{t('auth.org_id_hint')}</p>
-           </div>
-          )}
-
           {error && (
             <motion.div 
               initial={{ opacity: 0, x: -10 }}
@@ -148,21 +172,15 @@ const AuthView: React.FC = () => {
             disabled={loading}
             className="w-full bg-[#87a3a3] hover:bg-[#769191] text-white font-bold py-3.5 rounded-xl shadow-lg shadow-[#87a3a330] transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed mt-2"
           >
-            {loading ? t('auth.processing') : (isLogin ? t('auth.signin') : t('auth.create_account_btn'))}
+            {loading ? t('auth.processing') : (view === 'login' ? t('auth.signin') : 'Join Organization')}
           </button>
-        </form>
 
-        <div className="p-8 bg-slate-50 border-t border-slate-100 text-center">
-          <p className="text-sm text-slate-500 font-medium">
-            {isLogin ? t('auth.no_account') : t('auth.have_account')}
-            <button 
-              onClick={() => setIsLogin(!isLogin)}
-              className="ml-2 text-[#87a3a3] font-bold hover:underline"
-            >
-              {isLogin ? t('auth.signup') : t('auth.login_link')}
-            </button>
-          </p>
-        </div>
+          {view === 'login' && !token && (
+            <div className="text-center pt-2">
+              <p className="text-xs text-slate-400 font-medium">Looking to register? You need an invitation link.</p>
+            </div>
+          )}
+        </form>
       </motion.div>
 
       <p className="mt-8 text-slate-400 text-[10px] uppercase font-bold tracking-widest">

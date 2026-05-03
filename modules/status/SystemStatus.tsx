@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { checkApiConnection } from '@/core/services/geminiService';
 import { useTranslation } from '@/core/i18n/I18nContext';
 
-type Status = 'checking' | 'ok' | 'error';
+type Status = 'checking' | 'ok' | 'error' | 'quota_exceeded';
 
 const StatusIndicator: React.FC<{ status: Status }> = ({ status }) => {
   const { t } = useTranslation();
@@ -22,6 +22,11 @@ const StatusIndicator: React.FC<{ status: Status }> = ({ status }) => {
       dot: 'bg-red-500',
       text: 'text-red-600',
       message: t('status.error_detected'),
+    },
+    quota_exceeded: {
+      dot: 'bg-orange-500',
+      text: 'text-orange-600',
+      message: t('status.quota_exceeded'),
     },
   };
 
@@ -53,8 +58,8 @@ const SystemStatus: React.FC = () => {
     // Check 2: API Connectivity
     const verifyConnection = async () => {
       const correlationId = crypto.randomUUID();
-      const isConnected = await checkApiConnection(correlationId);
-      setApiConnectionStatus(isConnected ? 'ok' : 'error');
+      const status = await checkApiConnection(correlationId);
+      setApiConnectionStatus(status);
     };
     
     verifyConnection();

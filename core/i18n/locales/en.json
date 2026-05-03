@@ -7,13 +7,13 @@
     "maintenance": "Maintenance",
     "billing": "Billing",
     "status": "System Status",
-    "settings": "Settings"
+    "members": "Members",
+    "settings": "Settings",
+    "changelog": "Changelog"
   },
   "auth": {
     "welcome_back": "Welcome back",
-    "create_account": "Create an account",
     "login_desc": "Enter your credentials to manage your properties",
-    "signup_desc": "Join Lot 202 Property Management",
     "first_name": "First Name",
     "last_name": "Last Name",
     "email": "Email Address",
@@ -21,11 +21,7 @@
     "org_id": "Organization ID",
     "org_id_hint": "Use 'org-01' or 'org-02' for the demo",
     "signin": "Sign In",
-    "signup": "Sign Up",
-    "create_account_btn": "Create Account",
     "processing": "Processing...",
-    "no_account": "Don't have an account?",
-    "have_account": "Already have an account?",
     "login_link": "Log In",
     "footer": "Enterprise-Grade Property Management"
   },
@@ -57,6 +53,10 @@
     "admin_panel_desc": "This panel is only visible to users with the 'Admin' role.",
     "admin_panel_button": "Reset System"
   },
+  "changelog": {
+    "title": "Changelog",
+    "subtitle": "System updates and modifications history."
+  },
   "app": {
     "active_org": "Active Organization",
     "active_branch": "Active Branch",
@@ -84,7 +84,25 @@
     "gemini_connectivity_desc": "Performs a live test call to ensure the API is reachable and the key is valid.",
     "checking": "Checking...",
     "operational": "Operational",
-    "error_detected": "Error Detected"
+    "error_detected": "Error Detected",
+    "quota_exceeded": "Quota Exceeded"
+  },
+  "members": {
+    "title": "Members",
+    "subtitle": "Manage organization users and roles.",
+    "add_member": "Add New Member",
+    "add_title": "Add Member",
+    "edit_title": "Edit Member",
+    "first_name": "First Name",
+    "last_name": "Last Name",
+    "email": "Email",
+    "password": "Password",
+    "role": "Role",
+    "cancel": "Cancel",
+    "save": "Save Member",
+    "update": "Update Member",
+    "edit": "Edit",
+    "loading": "Loading members..."
   },
   "properties": {
     "title": "Asset Portfolio",

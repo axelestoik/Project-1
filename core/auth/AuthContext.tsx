@@ -20,7 +20,6 @@ interface AuthContextType {
   memberships: Membership[];
   organizations: Organization[];
   login: (credentials: Record<string, string>) => Promise<void>;
-  register: (data: Record<string, string>) => Promise<void>;
   logout: () => void;
   switchOrganization: (orgId: string) => void;
   switchBranch: (branchId: string | null) => void;
@@ -40,28 +39,40 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   React.useEffect(() => {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
+    const savedMemberships = localStorage.getItem('memberships');
+    const savedOrgs = localStorage.getItem('organizations');
+    
     if (savedToken && savedUser) {
       const parsedUser = JSON.parse(savedUser);
       setUser(parsedUser);
       setToken(savedToken);
       setActiveOrgId(parsedUser.organizationId);
-      // In a real app we'd fetch memberships here
-      // For now we'll mock them based on the user's org
-      setMemberships([{
-        userId: parsedUser.id,
-        organizationId: parsedUser.organizationId,
-        role: USER_ROLES.Admin, // Default for new signups in this demo
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        createdBy: 'system',
-        branchIds: []
-      }]);
-      setOrganizations([{
-        id: parsedUser.organizationId,
-        name: 'My Organization',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }]);
+      
+      if (savedMemberships) {
+        setMemberships(JSON.parse(savedMemberships));
+      } else {
+        setMemberships([{
+          userId: parsedUser.id,
+          organizationId: parsedUser.organizationId,
+          role: USER_ROLES.Admin,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          status: 'Active',
+          assignedBy: 'system',
+          branchIds: []
+        }]);
+      }
+      
+      if (savedOrgs) {
+        setOrganizations(JSON.parse(savedOrgs));
+      } else {
+        setOrganizations([{
+          id: parsedUser.organizationId,
+          name: 'My Organization',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }]);
+      }
     }
   }, []);
 
@@ -85,48 +96,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(data.user);
     setToken(data.token);
     setActiveOrgId(data.user.organizationId);
+    
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
     
-    // Refresh memberships (mocked for now)
-    setMemberships([{
-      userId: data.user.id,
-      organizationId: data.user.organizationId,
-      role: USER_ROLES.Admin,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      createdBy: 'system',
-      branchIds: []
-    }]);
-    setOrganizations([{
-      id: data.user.organizationId,
-      name: 'Default Org',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }]);
-  };
-
-  const register = async (data: Record<string, string>) => {
-    const res = await fetch('/api/auth/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Registration failed');
+    if (data.memberships) {
+      setMemberships(data.memberships);
+      localStorage.setItem('memberships', JSON.stringify(data.memberships));
     }
-    
-    // Auto login after registration
-    await login({ email: data.email, password: data.password });
+    if (data.organizations) {
+      setOrganizations(data.organizations);
+      localStorage.setItem('organizations', JSON.stringify(data.organizations));
+    }
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
+    setActiveOrgId(null);
+    setMemberships([]);
+    setOrganizations([]);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('memberships');
+    localStorage.removeItem('organizations');
   };
 
   const switchOrganization = (orgId: string) => {
@@ -161,7 +154,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       memberships, 
       organizations,
       login,
-      register,
       logout,
       switchOrganization,
       switchBranch

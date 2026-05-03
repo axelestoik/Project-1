@@ -1,0 +1,80 @@
+# Changelog
+
+## 2026-05-01
+- Implemented organization creation API with limit checks (`max_organizations`).
+- Updated organization schema to include `type`, `address`, `contactEmail`, `phone`, `status`.
+- Added listing endpoint for organizations, filtering by manager role.
+- Implemented organization memberships:
+    - Users access organizations through active memberships.
+    - Membership includes user, organization, role, status, assignedBy.
+    - Prevented duplicate memberships.
+    - Updated membership management endpoints to use assignedBy and enforce Active status.
+    - Added database unique constraint on userId/organizationId in memberships table.
+    - Renamed createdBy to assignedBy in memberships table.
+    - Updated membership status to Active by default.
+    - Updated all membership insertions in codebase to include status/assignedBy.
+    - Fixed database schema synchronization for organizations table (manual ALTER TABLE fix).
+- Implemented user creation for Organization Managers, enforcing `max_users` limit and mandatory organization membership.
+- Implemented sharing users across organizations managed by the same Manager:
+    - Added `POST /api/memberships` endpoint allowing addition of existing users to another organization.
+    - Verified user roles are independent per organization.
+    - Ensuring removal of access from one organization does not affect the user record itself.
+- Implemented internal organization roles:
+    - Added `POST /api/roles` endpoint to create scoped roles with hierarchy levels.
+    - Enforced hierarchy constraints: Managers cannot create/assign roles higher or equal to their own.
+- Implemented granular permissions:
+    - Added `checkPermission` utility and `permissionMiddleware`.
+    - Added `POST /api/role-permissions` endpoint to assign permissions to roles, with audit logging.
+- Hardened organization isolation:
+    - Verified and enforced organization scoping in `POST /api/memberships` and `POST /api/role-permissions`.
+    - Scoped `GET /api/notifications` to the active organization.
+- Implemented hierarchy notifications:
+    - Implemented `addNotification` helper in `server.ts`.
+    - Added comprehensive notification triggers for all required organizational and user lifecycle events.
+    - Added `GET /api/notifications` scoped to authenticated user to retrieve notifications.
+- Implemented audit logging for sensitive actions:
+    - Added `addAuditLog` helper in `server.ts`.
+    - Integrated audit logging for all critical organizational and user-related actions, including failed access attempts.
+    - Ensured all audit logs respect organization scope.
+- Improved user-facing error handling:
+    - Standardized and detailed error messages for invalid/expired invitations, email mismatches, and limit breaches.
+    - Added specific error states for Pending Approval and Inactive (Rejected/Suspended) accounts during login.
+    - Enhanced middleware error messages for unauthorized organization access and missing permissions.
+    - Consolidated duplicated helper functions and middlewares in `server.ts`.
+- Fixed database schema synchronization:
+    - Added manual `ALTER TABLE` migrations for missing columns in `users` table: `status`, `rejection_reason`, `platform_role`, `first_name`, `last_name`, and `created_at`.
+    - Added manual `ALTER TABLE` migrations for missing columns in `memberships` table: `status`, `assigned_by`, `created_at`, `updated_at`, and `branch_ids`.
+    - Dropped legacy `created_by` column from `memberships` table to fix null constraint violations during registration.
+    - Added data backfill for mandatory fields to ensure stability.
+- Fixed duplicate user error during invitation registration:
+    - Implemented find-or-create logic for users in the invitation acceptance flow.
+    - Handled existing memberships gracefully to prevent primary key constraint violations.
+    - Auto-activates existing inactive users when they complete registration via invitation.
+- Fixed database schema synchronization blocking new table creation:
+    - Explicitly added `CREATE TABLE IF NOT EXISTS` for `manager_limits` and other recent tables.
+    - Bypassed Drizzle-kit interactive terminal issues that were preventing the `manager_limits` table from being pushed automatically, restoring the ability to add new members and organizations.
+- Implemented member management for Admins:
+    - Added ability to remove members from the organization.
+    - Restricted "Add Member", "Invite Member", "Edit", and "Delete" actions to Admin and above roles.
+    - Integrated role updates with the existing user edit flow.
+- Enhanced SystemSuperAdmin overrides and global user management:
+    - Modified backend endpoints (`PUT /api/users/:userId`, `DELETE /api/memberships/:userId`, `POST /api/users`, `POST /api/memberships`, `GET /api/invitations`, and `GET /api/users`) to allow `SystemSuperAdmin` and `PlatformAdmin` to explicitly view, delete and modify users/invitations outside standard org limits.
+    - Repaired drizzle queries for updating and deleting user memberships in `server.ts` to properly identify matches for `SystemSuperAdmin`, fixing the bug where the admin could not modify roles or remove created users.
+    - Fixed a bug where `role` was undefined in `GET /api/users`, preventing role modifications from succeeding. The list now explicitly joins the `memberships` table.
+- Implemented functional account approval for created users:
+    - Added an `Approve` button to `Members.tsx` so Org Admins can manually approve users created under `PendingApproval`.
+    - Added `POST /api/users/:userId/approve` endpoint allowing Organization Admins to approve users for their specific organization instance.
+    - Refined login blocked message to smoothly notify the user that their account awaits approval by an administrator, completing the security loop for new pending accounts.
+- Added strict isolation rules for App Admins:
+    - Ensured `Admin` users can only see users and state pertaining directly to their owned organizations.
+    - Specifically excluded system administration roles (`PlatformAdmin` and `SystemSuperAdmin`) from being visible in `GET /api/users` and `GET /api/invitations` to any regular `Admin`.
+    - Added backend safeguards preventing a standard `Admin` from inviting or assigning the `SystemSuperAdmin` role to users.
+- Added self-service Organization creation on first login if no org exists:
+    - Automatically displays an active setup UI in `App.tsx` bypassing Sidebar setup when `organizations.length === 0`.
+    - Integrated `/api/organizations` endpoint to support organization bootstrapping upon login.
+- Developed "Create New Org" Admin Invitation feature:
+    - Allowed Admins within Members dashboard to invite new users as `Admin` and specify if they should create a new organization upon their first login.
+    - Generated a `platformInvitationsV2` payload with role `None` (user creates their org via the `App.tsx` prompt) to accomplish this securely.
+    - Updated `AuthView.tsx` to automatically fall back and validate `platformInvitations` if standard invitation is not found.
+- UI/UX Polish:
+    - Rediseñe el botón de eliminar miembro en `Members.tsx` a un icono `Trash2` mas minimalista y profesional sin perder funcionalidad.

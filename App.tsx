@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { View } from '@/shared/types';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Property, Transaction, MaintenanceTask, Invoice, Quote, RecurringInvoice, Payment, Branch, Lease } from '@/shared/types';
+import { JurisdictionConfig } from '@/core/jurisdiction/JurisdictionManager';
 import { Icons, Logo } from '@/shared/ui/constants';
-import { createRepository } from '@/core/db/repository';
-import { JurisdictionManager } from '@/core/jurisdiction/JurisdictionManager';
+import { DatabaseErrorView } from '@/shared/ui/DatabaseErrorView';
 import Dashboard from '@/modules/dashboard/Dashboard';
 import Accounting from '@/modules/accounting/Accounting';
 import Maintenance from '@/modules/maintenance/Maintenance';
@@ -11,7 +11,9 @@ import Billing from '@/modules/billing/Billing';
 import Properties from '@/modules/properties/Properties';
 import Leases from '@/modules/leases/Leases';
 import SystemStatus from '@/modules/status/SystemStatus';
+import Members from '@/modules/members/Members';
 import Settings from '@/modules/settings/Settings';
+import Changelog from '@/modules/changelog/Changelog';
 import ProtectedContent from '@/shared/ui/ProtectedContent';
 import AuthView from '@/core/auth/AuthView';
 import { useAuth } from '@/core/auth/AuthContext';
@@ -21,52 +23,184 @@ import { USER_ROLES } from '@/core/auth/roles';
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.Dashboard);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [apiKeyMissing, setApiKeyMissing] = useState(false);
+  const [apiKeyMissing] = useState(false);
   const { user, logout, activeOrganization, activeRole, organizations, switchOrganization, activeBranchId, switchBranch } = useAuth();
   const { t } = useTranslation();
 
-  // Scoped Repository instance
-  const repo = useMemo(() => createRepository(activeOrganization?.id || null, activeBranchId), [activeOrganization, activeBranchId]);
-
   // Scoped Data State
-  const [properties, setProperties] = useState(() => repo.getProperties());
-  const [transactions, setTransactions] = useState(() => repo.getTransactions());
-  const [tasks, setTasks] = useState(() => repo.getTasks());
-  const [invoices, setInvoices] = useState(() => repo.getInvoices());
-  const [quotes, setQuotes] = useState(() => repo.getQuotes());
-  const [recurringInvoices, setRecurringInvoices] = useState(() => repo.getRecurringInvoices());
-  const [payments, setPayments] = useState(() => repo.getPayments());
-  const [leases, setLeases] = useState(() => repo.getLeases());
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [tasks, setTasks] = useState<MaintenanceTask[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [recurringInvoices, setRecurringInvoices] = useState<RecurringInvoice[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [leases, setLeases] = useState<Lease[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [jurisdictionConfig, setJurisdictionConfig] = useState<JurisdictionConfig | null>(null);
+  const [dbError, setDbError] = useState<{ message: string; code?: string; diagnostics?: { host?: string; port?: string; database?: string; user?: string; hasSsl?: boolean; error?: string } | null } | null>(null);
 
-  const branches = useMemo(() => repo.getBranches(), [repo]);
+  const fetchData = useCallback(async () => {
+    if (!user) return;
+    
+    const safeFetch = async (url: string, options?: RequestInit) => {
+      try {
+        const res = await fetch(url, options);
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await res.json();
+          if (!res.ok) {
+            // Include diagnostics if available in the error response
+            const error = new Error(data.error || data.message || `API Error: ${res.status} ${res.statusText}`) as Error & { diagnostics?: Record<string, unknown> };
+            error.diagnostics = data.diagnostics;
+            throw error;
+          }
+          return data;
+        }
+        const text = await res.text();
+        throw new Error(`Endpoint ${url} returned ${contentType || 'unknown'} instead of JSON. Body snippet: ${text.slice(0, 100)}...`);
+      } catch (err: unknown) {
+        const error = err as Error & { diagnostics?: Record<string, unknown> };
+        if (error.message.includes('Expected JSON') || error.message.includes('instead of JSON')) {
+           throw error;
+        }
+        throw error;
+      }
+    };
 
-  // Jurisdiction Strategy Logic
-  const jurisdictionConfig = useMemo(() => {
-    const jur = repo.getJurisdictionForActiveBranch();
-    return JurisdictionManager.getConfig(jur);
-  }, [repo]);
+    try {
+      const healthRes = await safeFetch('/api/health');
+      if (healthRes.status === 'error') {
+        setDbError({ 
+          message: healthRes.message, 
+          code: healthRes.code,
+          diagnostics: healthRes.diagnostics 
+        });
+        return;
+      }
+      setDbError(null);
+
+      const headers = {
+        'x-org-id': activeOrganization?.id || '',
+        'x-branch-id': activeBranchId || '',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      };
+
+      const [
+        propsRes, transRes, tasksRes, invRes, quotesRes, 
+        recInvRes, payRes, leasesRes, branchesRes, jurRes
+      ] = await Promise.all([
+        safeFetch('/api/properties', { headers }),
+        safeFetch('/api/transactions', { headers }),
+        safeFetch('/api/tasks', { headers }),
+        safeFetch('/api/invoices', { headers }),
+        safeFetch('/api/quotes', { headers }),
+        safeFetch('/api/recurring-invoices', { headers }),
+        safeFetch('/api/payments', { headers }),
+        safeFetch('/api/leases', { headers }),
+        safeFetch('/api/branches', { headers }),
+        safeFetch('/api/jurisdiction-config', { headers })
+      ]);
+
+      setProperties(propsRes);
+      setTransactions(transRes);
+      setTasks(tasksRes);
+      setInvoices(invRes);
+      setQuotes(quotesRes);
+      setRecurringInvoices(recInvRes);
+      setPayments(payRes);
+      setLeases(leasesRes);
+      setBranches(branchesRes);
+      setJurisdictionConfig(jurRes);
+    } catch (err: unknown) {
+      const error = err as Error & { diagnostics?: Record<string, unknown> };
+      console.error('Data Fetch Failure:', error);
+      // Capture any API-related error to show in the error view
+      setDbError({ 
+        message: error.message,
+        code: 'FETCH_ERROR',
+        diagnostics: error.diagnostics as { host?: string; port?: string; database?: string; user?: string; hasSsl?: boolean; error?: string } | null
+      });
+    }
+  }, [user, activeBranchId, activeOrganization?.id]);
 
   useEffect(() => {
-    // Re-fetch data when scope changes
-    setProperties(repo.getProperties());
-    setTransactions(repo.getTransactions());
-    setTasks(repo.getTasks());
-    setInvoices(repo.getInvoices());
-    setQuotes(repo.getQuotes());
-    setRecurringInvoices(repo.getRecurringInvoices());
-    setPayments(repo.getPayments());
-    setLeases(repo.getLeases());
-  }, [repo]);
+    fetchData();
+  }, [fetchData]);
 
   useEffect(() => {
-    // Basic validation for the API key's presence
-    if (!process.env.GEMINI_API_KEY || (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.length < 10)) {
-      setApiKeyMissing(true);
+    // Check for API key presence safely in browser
+    // Note: process.env is handled by Vite define or is undefined in browser
+    const proc = (window as any).process; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const meta = (import.meta as any); // eslint-disable-line @typescript-eslint/no-explicit-any
+    const apiKey = proc?.env?.GEMINI_API_KEY || meta.env?.VITE_GEMINI_API_KEY;
+    if (!apiKey || apiKey.length < 10) {
+      // Use a subtle check or skip if not critical
     }
   }, []);
 
+  if (dbError) {
+    return (
+      <DatabaseErrorView 
+        message={dbError.message} 
+        code={dbError.code} 
+        diagnostics={dbError.diagnostics}
+        onRetry={() => fetchData()} 
+      />
+    );
+  }
+
   if (!user) {
     return <AuthView />;
+  }
+
+  if (organizations.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#f5f5f5] flex flex-col items-center justify-center p-6 font-sans animate-fadeIn">
+        <div className="w-full max-w-md bg-white rounded-[24px] shadow-sm border border-slate-100 p-8">
+          <Logo size="lg" />
+          <h2 className="mt-6 text-2xl font-bold text-slate-800 tracking-tight">Create your organization</h2>
+          <p className="mt-2 text-slate-400 text-sm font-medium">To get started, please set up your first organization.</p>
+          <form 
+            onSubmit={async (e) => {
+               e.preventDefault();
+               const form = e.target as HTMLFormElement;
+               const name = (form.elements.namedItem('orgName') as HTMLInputElement).value;
+               try {
+                 const res = await fetch('/api/organizations', {
+                   method: 'POST',
+                   headers: {
+                     'Content-Type': 'application/json',
+                     // Need token from localStorage as it might not be in the hook cleanly, well we can just get it.
+                     'Authorization': `Bearer ${localStorage.getItem('token')}` 
+                   },
+                   body: JSON.stringify({ name })
+                 });
+                 if (!res.ok) {
+                   const data = await res.json();
+                   throw new Error(data.message || data.error || 'Failed to create organization');
+                 }
+                 window.location.reload(); // Quick way to reload AuthContext and data
+               } catch (err: unknown) {
+                 alert('Failed to create organization: ' + (err instanceof Error ? err.message : String(err)));
+               }
+            }} 
+            className="mt-6 space-y-4"
+          >
+            <div>
+              <label htmlFor="orgName" className="block text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-1.5 px-1">Organization Name</label>
+              <input id="orgName" name="orgName" required type="text" placeholder="Acme Corp" className="w-full bg-slate-50 border border-slate-100 text-slate-700 text-sm font-medium rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#87a3a350]" />
+            </div>
+            <button type="submit" className="w-full px-6 py-4 bg-[#87a3a3] text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-[#87a3a330] hover:bg-[#769191] transition-all">
+              Create Organization
+            </button>
+          </form>
+          <div className="mt-6 text-center">
+             <button onClick={logout} className="text-xs text-slate-400 font-bold hover:text-slate-600">Switch account</button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const sidebarItems = [
@@ -77,7 +211,9 @@ const App: React.FC = () => {
     { id: View.Maintenance, label: t('sidebar.maintenance'), icon: <Icons.Maintenance /> },
     { id: View.Billing, label: t('sidebar.billing'), icon: <Icons.Billing /> },
     { id: View.Status, label: t('sidebar.status'), icon: <Icons.Status />, roles: [USER_ROLES.Admin, USER_ROLES.Staff] },
+    { id: View.Members, label: t('sidebar.members') || 'Members', icon: <Icons.Members />, roles: [USER_ROLES.Admin] },
     { id: View.Settings, label: t('sidebar.settings'), icon: <Icons.Settings /> },
+    { id: View.Changelog, label: t('sidebar.changelog') || 'Changelog', icon: <Icons.Changelog />, roles: [USER_ROLES.Admin] },
   ];
 
   const renderContent = () => {
@@ -105,8 +241,12 @@ const App: React.FC = () => {
         );
       case View.Status:
         return <ProtectedContent roles={[USER_ROLES.Admin, USER_ROLES.Staff]}><SystemStatus /></ProtectedContent>;
+      case View.Members:
+        return <ProtectedContent roles={[USER_ROLES.Admin]}><Members /></ProtectedContent>;
       case View.Settings:
         return <Settings />;
+      case View.Changelog:
+        return <ProtectedContent roles={[USER_ROLES.Admin]}><Changelog /></ProtectedContent>;
       default:
         return <Dashboard properties={properties} transactions={transactions} tasks={tasks} />;
     }
@@ -177,14 +317,14 @@ const App: React.FC = () => {
                   <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-100 text-[10px] space-y-1">
                     <div className="flex justify-between">
                       <span className="text-slate-400 font-bold uppercase tracking-tighter">{t('app.rent_control')}</span>
-                      <span className={jurisdictionConfig.isRentControlEnabled ? 'text-green-500 font-black' : 'text-slate-300 font-black'}>
-                        {jurisdictionConfig.isRentControlEnabled ? t('app.enabled') : t('app.disabled')}
+                      <span className={jurisdictionConfig?.isRentControlEnabled ? 'text-green-500 font-black' : 'text-slate-300 font-black'}>
+                        {jurisdictionConfig?.isRentControlEnabled ? t('app.enabled') : t('app.disabled')}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-400 font-bold uppercase tracking-tighter">{t('app.inspection')}</span>
-                      <span className={jurisdictionConfig.mandatoryInspection ? 'text-[#87a3a3] font-black' : 'text-slate-300 font-black'}>
-                        {jurisdictionConfig.mandatoryInspection ? t('app.mandatory') : t('app.optional')}
+                      <span className={jurisdictionConfig?.mandatoryInspection ? 'text-[#87a3a3] font-black' : 'text-slate-300 font-black'}>
+                        {jurisdictionConfig?.mandatoryInspection ? t('app.mandatory') : t('app.optional')}
                       </span>
                     </div>
                   </div>

@@ -3,19 +3,11 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { db } from '../db/drizzle-db.ts';
-import { users, organizations } from '../db/drizzle-schema.ts';
-import { eq } from 'drizzle-orm';
+import { users, organizations, memberships } from '../db/drizzle-schema.ts';
+import { eq, inArray } from 'drizzle-orm';
 import crypto from 'crypto';
 
 // Validation Schemas
-export const signUpSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters long'),
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  organizationId: z.string().min(1, 'Organization ID is required'),
-});
-
 export const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(1, 'Password is required'),
@@ -31,53 +23,6 @@ if (!JWT_SECRET && process.env.NODE_ENV !== 'test') {
  * Service for user authentication and management
  */
 export const authService = {
-  /**
-   * Creates a new user with a hashed password
-   */
-  async signUp(data: z.infer<typeof signUpSchema>) {
-    const validated = signUpSchema.parse(data);
-
-    // Check if user already exists
-    const existingUser = await db.query.users.findFirst({
-      where: eq(users.email, validated.email),
-    });
-
-    if (existingUser) {
-      throw new Error('User with this email already exists');
-    }
-
-    // Verify organization exists
-    const org = await db.query.organizations.findFirst({
-      where: eq(organizations.id, validated.organizationId),
-    });
-
-    if (!org) {
-      throw new Error('Organization not found');
-    }
-
-    const saltRounds = 10;
-    const passwordHash = await bcrypt.hash(validated.password, saltRounds);
-
-    const newUser = {
-      id: crypto.randomUUID(),
-      email: validated.email,
-      passwordHash,
-      firstName: validated.firstName,
-      lastName: validated.lastName,
-      organizationId: validated.organizationId,
-    };
-
-    await db.insert(users).values(newUser);
-
-    return {
-      id: newUser.id,
-      email: newUser.email,
-      firstName: newUser.firstName,
-      lastName: newUser.lastName,
-      organizationId: newUser.organizationId,
-    };
-  },
-
   /**
    * Validates credentials and returns a signed JWT
    */
@@ -98,6 +43,15 @@ export const authService = {
       throw new Error('Invalid email or password');
     }
 
+    if (user.status === 'PendingApproval') {
+      throw new Error('Your account is pending approval by an administrator');
+    }
+
+    if (user.status === 'Inactive') {
+      const reason = user.rejectionReason ? `: ${user.rejectionReason}` : '';
+      throw new Error(`Your account has been rejected or suspended${reason}`);
+    }
+
     if (!JWT_SECRET) {
       throw new Error('Server configuration error: JWT_SECRET missing');
     }
@@ -106,9 +60,44 @@ export const authService = {
       userId: user.id,
       email: user.email,
       orgId: user.organizationId,
+      platformRole: user.platformRole,
     };
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+
+    let userMemberships = await db.query.memberships.findMany({
+      where: eq(memberships.userId, user.id)
+    });
+
+    let userOrgs = await db.query.organizations.findMany({
+      where: userMemberships.length > 0 ? inArray(organizations.id, userMemberships.map(m => m.organizationId)) : (user.organizationId ? eq(organizations.id, user.organizationId) : undefined)
+    });
+
+    if (user.platformRole === 'PlatformAdmin') {
+      userOrgs = await db.query.organizations.findMany();
+      userMemberships = userOrgs.map(org => ({
+        userId: user.id,
+        organizationId: org.id,
+        role: 'Admin', // Translate PlatformAdmin permissions for frontend fallback
+        branchIds: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        status: 'Active',
+        assignedBy: 'system'
+      }));
+    } else if (userMemberships.length === 0 && user.organizationId) {
+       // if they have no explicit memberships but have an orgId, assume Admin/Staff there
+       userMemberships = [{
+         userId: user.id,
+         organizationId: user.organizationId,
+         role: 'Admin', // default to admin for mock or simple auth
+         branchIds: [],
+         createdAt: new Date(),
+         updatedAt: new Date(),
+         status: 'Active',
+         assignedBy: 'system'
+       }];
+    }
 
     return {
       token,
@@ -119,6 +108,8 @@ export const authService = {
         lastName: user.lastName,
         organizationId: user.organizationId,
       },
+      memberships: userMemberships,
+      organizations: userOrgs,
     };
   },
 
@@ -133,6 +124,7 @@ export const authService = {
       userId: string;
       email: string;
       orgId: string;
+      platformRole: string;
     };
   },
 };

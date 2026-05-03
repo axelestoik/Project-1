@@ -63,3 +63,13 @@ For detailed configuration and setup instructions, please see the [CI/CD README]
 ## Development Conventions
 
 For details on our branching strategy, commit messages, and pull request process, please see [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## Role-Based Access Control (RBAC)
+
+The application uses a centralized RBAC system. 
+To add a new role in the future:
+1. Update `USER_ROLES` object and the `UserRole` union type in `core/auth/roles.ts`.
+2. Update the `role` enum in the database schema (`core/db/drizzle-schema.ts` and `core/db/schema.ts` if needed).
+3. Generate and apply a new database migration.
+4. Protect UI components by passing the new role to `<ProtectedContent roles={[USER_ROLES.NewRole]}>...</ProtectedContent>`.
+5. Update backend route logic, verifying `req.auth?.role` in `server.ts` or applying the role selectively in the `rbacMiddleware`.

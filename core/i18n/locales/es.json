@@ -7,13 +7,13 @@
     "maintenance": "Mantenimiento",
     "billing": "Facturación",
     "status": "Estado del Sistema",
-    "settings": "Ajustes"
+    "members": "Miembros",
+    "settings": "Ajustes",
+    "changelog": "Historial de Cambios"
   },
   "auth": {
     "welcome_back": "Bienvenido de nuevo",
-    "create_account": "Crear una cuenta",
     "login_desc": "Ingrese sus credenciales para administrar sus propiedades",
-    "signup_desc": "Únete a Lot 202 Property Management",
     "first_name": "Nombre",
     "last_name": "Apellido",
     "email": "Correo Electrónico",
@@ -21,11 +21,7 @@
     "org_id": "ID de Organización",
     "org_id_hint": "Use 'org-01' o 'org-02' para la demostración",
     "signin": "Iniciar Sesión",
-    "signup": "Registrarse",
-    "create_account_btn": "Crear Cuenta",
     "processing": "Procesando...",
-    "no_account": "¿No tienes una cuenta?",
-    "have_account": "¿Ya tienes una cuenta?",
     "login_link": "Iniciar Sesión",
     "footer": "Gestión de Propiedades de Grado Empresarial"
   },
@@ -57,6 +53,10 @@
     "admin_panel_desc": "Este panel solo es visible para usuarios con el rol de 'Admin'.",
     "admin_panel_button": "Reiniciar Sistema"
   },
+  "changelog": {
+    "title": "Historial de Cambios",
+    "subtitle": "Historial de modificaciones y actualizaciones del sistema."
+  },
   "app": {
     "active_org": "Organización Activa",
     "active_branch": "Sucursal Activa",
@@ -84,7 +84,25 @@
     "gemini_connectivity_desc": "Realiza una llamada de prueba en vivo para asegurar que la API sea accesible y la clave sea válida.",
     "checking": "Verificando...",
     "operational": "Operativo",
-    "error_detected": "Error Detectado"
+    "error_detected": "Error Detectado",
+    "quota_exceeded": "Cuota Excedida"
+  },
+  "members": {
+    "title": "Miembros",
+    "subtitle": "Gestionar roles y usuarios de la organización.",
+    "add_member": "Agregar Miembro",
+    "add_title": "Agregar Miembro",
+    "edit_title": "Editar Miembro",
+    "first_name": "Nombre",
+    "last_name": "Apellido",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "role": "Rol",
+    "cancel": "Cancelar",
+    "save": "Guardar Miembro",
+    "update": "Actualizar Miembro",
+    "edit": "Editar",
+    "loading": "Cargando miembros..."
   },
   "properties": {
     "title": "Cartera de Activos",
